@@ -1,10 +1,20 @@
-const { DataSource } = require('apollo-datasource');
-const isEmail = require('isemail');
+const { DataSource } = require("apollo-datasource");
+const isEmail = require("isemail");
+// Add this to the top of the file
+/**
+ * @typedef { import("@prisma/client").PrismaClient } Prisma
+ */
 
 class UserAPI extends DataSource {
-  constructor({ store }) {
+  /**
+   * @type {Prisma}
+   */
+  prisma;
+
+  constructor({ store, prisma }) {
     super();
     this.store = store;
+    this.prisma = prisma;
   }
 
   /**
@@ -17,18 +27,25 @@ class UserAPI extends DataSource {
     this.context = config.context;
   }
 
-  /**
-   * User can be called with an argument that includes email, but it doesn't
-   * have to be. If the user is already on the context, it will use that user
-   * instead
-   */
   async findOrCreateUser({ email: emailArg } = {}) {
     const email =
       this.context && this.context.user ? this.context.user.email : emailArg;
     if (!email || !isEmail.validate(email)) return null;
 
-    const users = await this.store.users.findOrCreate({ where: { email } });
-    return users && users[0] ? users[0] : null;
+    const user = this.prisma.user.upsert({
+      where: { email },
+      update: {
+        email,
+        token: Buffer.from(email).toString("base64"),
+      },
+      create: {
+        email,
+        token: Buffer.from(email).toString("base64"),
+      },
+    });
+    // SEQUELIZE
+    // const users = await this.store.users.findOrCreate({ where: { email } });
+    return user ? user : null;
   }
 
   async bookTrips({ launchIds }) {
@@ -49,24 +66,63 @@ class UserAPI extends DataSource {
 
   async bookTrip({ launchId }) {
     const userId = this.context.user.id;
-    const res = await this.store.trips.findOrCreate({
-      where: { userId, launchId },
+
+    const res = await this.prisma.trip.upsert({
+      where: {
+        launchId_userId: {
+          launchId: Number(launchId),
+          userId,
+        },
+      },
+      update: {
+        launchId: Number(launchId),
+        user: {
+          connect: {
+            id: userId
+          }
+        }
+      },
+      create: {
+        launchId: Number(launchId),
+        user: {
+          connect: {
+            id: userId
+          }
+        }
+      }
     });
-    return res && res.length ? res[0].get() : false;
+    // SEQUELIZE
+    // const res = await this.store.trips.findOrCreate({
+    //   where: { userId, launchId },
+    // });
+
+    return res ? res : false;
   }
 
   async cancelTrip({ launchId }) {
     const userId = this.context.user.id;
-    return !!this.store.trips.destroy({ where: { userId, launchId } });
+    return this.prisma.trip.delete({
+      where: {
+        launchId_userId: {
+          launchId: Number(launchId),
+          userId
+        }
+      }
+    })
+    // SEQUELIZE
+    // return !!this.store.trips.destroy({ where: { userId, launchId } });
   }
 
   async getLaunchIdsByUser() {
     const userId = this.context.user.id;
-    const found = await this.store.trips.findAll({
+    // const found = await this.store.trips.findAll({
+    //   where: { userId },
+    // });
+    const found = await this.prisma.trip.findMany({
       where: { userId },
-    });
-    return found && found.length
-      ? found.map(l => l.dataValues.launchId).filter(l => !!l)
+    })
+    return found
+      ? found.map((t) => t.launchId).filter((t) => !!l)
       : [];
   }
 

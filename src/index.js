@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { ApolloServer } = require('apollo-server');
+const { PrismaClient } = require('@prisma/client');
 const typeDefs = require('./schema');
 const resolvers = require('./resolvers');
 const isEmail = require('isemail');
@@ -10,15 +11,15 @@ const { createStore } = require('./utils');
 const LaunchAPI = require('./datasources/launch');
 const UserAPI = require('./datasources/user');
 
-
 const store = createStore();
+const prisma = new PrismaClient()
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   dataSources: () => ({
     launchAPI: new LaunchAPI(),
-    userAPI: new UserAPI({ store })
+    userAPI: new UserAPI({ store, prisma })
   }),
   context: async ({ req }) => {
     // simple auth check on every request
