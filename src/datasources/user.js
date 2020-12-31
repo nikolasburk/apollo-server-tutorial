@@ -11,9 +11,8 @@ class UserAPI extends DataSource {
    */
   prisma;
 
-  constructor({ store, prisma }) {
+  constructor({ prisma }) {
     super();
-    this.store = store;
     this.prisma = prisma;
   }
 
@@ -121,13 +120,13 @@ class UserAPI extends DataSource {
     const found = await this.prisma.trip.findMany({
       where: { userId },
     });
-    return found ? found.map((t) => t.launchId).filter((t) => !!l) : [];
+    return found ? found.map((t) => t.launchId).filter((t) => !!t) : [];
   }
 
   async isBookedOnLaunch({ launchId }) {
     if (!this.context || !this.context.user) return false;
     const userId = this.context.user.id;
-    const found = await this.prisma.trip.findFirst({
+    const found = await this.prisma.trip.findUnique({
       where: {
         launchId_userId: {
           launchId: Number(launchId),
