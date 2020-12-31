@@ -14,6 +14,17 @@ const UserAPI = require('./datasources/user');
 const store = createStore();
 const prisma = new PrismaClient()
 
+async function resetData() {
+  await prisma.user.deleteMany()
+  await prisma.trip.deleteMany()
+}
+
+async function main() {
+  await resetData()
+}
+
+main()
+
 const server = new ApolloServer({
   typeDefs,
   resolvers,
@@ -29,6 +40,7 @@ const server = new ApolloServer({
     // find a user by their email
     const users = await store.users.findOrCreate({ where: { email } });
     const user = users && users[0] || null;
+    
     return { user: { ...user.dataValues } };
   },
 });
@@ -36,7 +48,7 @@ const server = new ApolloServer({
 server.listen().then(() => {
   console.log(`
     Server is running!
-    Listening on port 4000
+    Listening on port http://localhost:4000
     Explore at https://studio.apollographql.com/dev
   `);
 });

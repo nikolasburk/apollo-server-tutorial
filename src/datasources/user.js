@@ -78,18 +78,18 @@ class UserAPI extends DataSource {
         launchId: Number(launchId),
         user: {
           connect: {
-            id: userId
-          }
-        }
+            id: userId,
+          },
+        },
       },
       create: {
         launchId: Number(launchId),
         user: {
           connect: {
-            id: userId
-          }
-        }
-      }
+            id: userId,
+          },
+        },
+      },
     });
     // SEQUELIZE
     // const res = await this.store.trips.findOrCreate({
@@ -105,10 +105,10 @@ class UserAPI extends DataSource {
       where: {
         launchId_userId: {
           launchId: Number(launchId),
-          userId
-        }
-      }
-    })
+          userId,
+        },
+      },
+    });
     // SEQUELIZE
     // return !!this.store.trips.destroy({ where: { userId, launchId } });
   }
@@ -120,19 +120,26 @@ class UserAPI extends DataSource {
     // });
     const found = await this.prisma.trip.findMany({
       where: { userId },
-    })
-    return found
-      ? found.map((t) => t.launchId).filter((t) => !!l)
-      : [];
+    });
+    return found ? found.map((t) => t.launchId).filter((t) => !!l) : [];
   }
 
   async isBookedOnLaunch({ launchId }) {
     if (!this.context || !this.context.user) return false;
     const userId = this.context.user.id;
-    const found = await this.store.trips.findAll({
-      where: { userId, launchId },
+    const found = await this.prisma.trip.findFirst({
+      where: {
+        launchId_userId: {
+          launchId: Number(launchId),
+          userId,
+        },
+      },
     });
-    return found && found.length > 0;
+    // SEQUELIZE
+    // const found = await this.store.trips.findAll({
+    //   where: { userId, launchId },
+    // });
+    return Boolean(found);
   }
 }
 
