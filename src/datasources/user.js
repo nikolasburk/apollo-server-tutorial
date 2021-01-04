@@ -42,8 +42,6 @@ class UserAPI extends DataSource {
         token: Buffer.from(email).toString("base64"),
       },
     });
-    // SEQUELIZE
-    // const users = await this.store.users.findOrCreate({ where: { email } });
     return user ? user : null;
   }
 
@@ -90,11 +88,6 @@ class UserAPI extends DataSource {
         },
       },
     });
-    // SEQUELIZE
-    // const res = await this.store.trips.findOrCreate({
-    //   where: { userId, launchId },
-    // });
-
     return res ? res : false;
   }
 
@@ -108,15 +101,10 @@ class UserAPI extends DataSource {
         },
       },
     });
-    // SEQUELIZE
-    // return !!this.store.trips.destroy({ where: { userId, launchId } });
   }
 
   async getLaunchIdsByUser() {
     const userId = this.context.user.id;
-    // const found = await this.store.trips.findAll({
-    //   where: { userId },
-    // });
     const found = await this.prisma.trip.findMany({
       where: { userId },
     });
@@ -134,10 +122,6 @@ class UserAPI extends DataSource {
         },
       },
     });
-    // SEQUELIZE
-    // const found = await this.store.trips.findAll({
-    //   where: { userId, launchId },
-    // });
     return Boolean(found);
   }
 }
